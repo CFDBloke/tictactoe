@@ -1,7 +1,5 @@
 # frozen_string_literal: false
 
-require 'pry'
-
 # Module of methods that provide all of the player details to the program
 module PlayerDetails
   def get_name(num)
@@ -67,20 +65,6 @@ class String
   end
 end
 
-def play(board, player)
-  board.drawboard
-
-  return unless board.winning_piece == ''
-
-  puts "#{player.name}, please choose your play by entering a number..."
-
-  play_choice = gets.chomp
-
-  board.register_play(player, play_choice)
-
-  board.winning_piece = board.winner?(player.piece)
-end
-
 # The class for the tictactoe game board
 class Board
   include PlayerDetails
@@ -101,13 +85,9 @@ class Board
   end
 
   def register_play(player, choice)
-    @board = @board.map { |value| choice == value ? player.piece : value }
+    return :no_play if @board.none? choice
 
-    @winning_combos = @winning_combos.map do |winning_combo|
-      winning_combo.map { |value| choice == value ? player.piece : value }
-    end
-
-    @colors[choice.to_i - 1] = player.color
+    confirm_register(player, choice)
   end
 
   def winner?(piece)
@@ -122,10 +102,24 @@ class Board
       player1
     elsif player2.piece == @winning_piece
       player2
+    else
+      :draw
     end
   end
 
   private
+
+  def confirm_register(player, choice)
+    @board = @board.map { |value| choice == value ? player.piece : value }
+
+    @winning_combos = @winning_combos.map do |winning_combo|
+      winning_combo.map { |value| choice == value ? player.piece : value }
+    end
+
+    @colors[choice.to_i - 1] = player.color
+
+    return :draw if @colors.none?(39)
+  end
 
   def drawboard_top
     puts '     '
@@ -169,31 +163,85 @@ class Game
     player1 = create_player(1)
     player2 = create_player(2, player1.piece)
 
-    confirm_play_start(player1, player2)
+    play_new_board(player1, player2)
+  end
 
+  private
+
+  def play_new_board(player1, player2)
     board = Board.new
+
+    confirm_play_start(player1, player2, board)
+
     until board.winning_piece != ''
       play(board, player1)
       play(board, player2)
     end
 
-    confirm_end(board.determine_winner(player1, player2))
+    confirm_play_end(board.determine_winner(player1, player2))
+
+    confirm_play_again(player1, player2)
   end
 
-  private
+  def play(board, player)
+    return unless board.winning_piece == ''
+
+    puts "#{player.name}, please choose your play by entering a number...".colorize(player.color)
+
+    play_result = board.register_play(player, gets.chomp)
+
+    assess_play(board, player, play_result)
+  end
+
+  def assess_play(board, player, play_result)
+    case play_result
+    when :no_play
+      replay(board, player)
+    when :draw
+      board.drawboard
+      board.winning_piece = 'draw'
+    else
+      board.drawboard
+      board.winning_piece = board.winner?(player.piece)
+    end
+  end
+
+  def replay(board, player)
+    puts 'That board position has already been played, try again...'
+    play(board, player)
+  end
 
   def create_player(num, other_piece = nil)
     name = get_name(num)
     Player.new(name, get_piece(name, other_piece), get_color(name))
   end
 
-  def confirm_play_start(player1, player2)
+  def confirm_play_start(player1, player2, board)
     puts 'Ok, let\'s play...'
     puts "#{player1.name.colorize(player1.color)}, #{player2.name.colorize(player2.color)}... may the best player win!!"
+    board.drawboard
   end
 
-  def confirm_end(player)
-    puts "Congratulations #{player.name}, you won!".colorize(player.color)
+  def confirm_play_end(player)
+    if player == :draw
+      puts "It's a draw!!"
+    else
+      puts "Congratulations #{player.name}, you won!".colorize(player.color)
+    end
+  end
+
+  def confirm_play_again(player1, player2)
+    puts "Would you like a re-match? (enter 'y' or 'n')"
+
+    case gets.chomp.downcase
+    when 'y', 'yes'
+      play_new_board(player1, player2)
+    when 'n', 'no'
+      puts 'Ok, thanks for playing! See you again soon!!'
+    else
+      puts 'Sorry, I didn\'t quite catch that...'
+      confirm_play_again(player1, player2)
+    end
   end
 end
 
