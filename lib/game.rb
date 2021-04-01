@@ -62,7 +62,7 @@ class Game
       replay(player)
     else
       @board.drawboard
-      @board.winning_piece = play_result == :draw ? 'draw' : @board.winner?(player.piece)
+      @board.winning_piece = play_result == :draw ? 'draw' : @board.winner(player.piece)
     end
   end
 

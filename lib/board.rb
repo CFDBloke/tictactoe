@@ -23,7 +23,7 @@ class Board
     confirm_register(player, choice)
   end
 
-  def winner?(piece)
+  def winner(piece)
     is_win = @winning_combos.reduce(false) do |winner, winning_combo|
       winner || winning_combo.all? { |value| value == piece }
     end
@@ -43,15 +43,23 @@ class Board
   private
 
   def confirm_register(player, choice)
-    @board = @board.map { |value| choice == value ? player.piece : value }
+    update_board(player, choice)
 
-    @winning_combos = @winning_combos.map do |winning_combo|
-      winning_combo.map { |value| choice == value ? player.piece : value }
-    end
+    update_winning_combos(player, choice)
 
     @colors[choice.to_i - 1] = player.color
 
     return :draw if @colors.none?(39)
+  end
+
+  def update_board(player, choice)
+    @board = @board.map { |value| choice == value ? player.piece : value }
+  end
+
+  def update_winning_combos(player, choice)
+    @winning_combos = @winning_combos.map do |winning_combo|
+      winning_combo.map { |value| choice == value ? player.piece : value }
+    end
   end
 
   def drawboard_top

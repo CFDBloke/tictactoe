@@ -11,7 +11,7 @@ class Player
     @piece = ''
   end
 
-  def setup(other_piece = '')
+  def setup(other_piece = nil)
     @name = request_name
     @color = request_color
     @piece = request_piece(other_piece)
@@ -33,6 +33,8 @@ class Player
     puts "\n#{@name} please choose the colour of your playing piece from the list below\n"
 
     colors.each_pair { |key, value| puts "#{key}: #{value}".colorize(get_color_code(value.downcase)) }
+
+    color_input
   end
 
   def request_piece(other_piece = nil)
@@ -40,17 +42,28 @@ class Player
 
     puts other_piece.nil? ? '' : "You can't use #{other_piece}"
 
-    choice = gets.chomp
-
-    if choice.length > 1
-      puts "\nYou can only enter one character, using only the first character, #{choice[0]}!"
-      choice = choice[0]
-    end
-
-    piece_choice_valid(choice, other_piece) ? choice : request_piece(other_piece)
+    piece_input(other_piece)
   end
 
   private
+
+  def piece_input(other_piece)
+    loop do
+      choice = truncate_piece
+
+      return choice if piece_valid?(choice, other_piece)
+
+      puts "You can't use #{other_piece}... try again..."
+    end
+  end
+
+  def truncate_piece
+    choice = gets.chomp
+    return choice if choice.length == 1
+
+    puts "\nYou can only enter one character, using only the first character, #{choice[0]}!"
+    choice[0]
+  end
 
   def color_input
     loop do
@@ -67,12 +80,7 @@ class Player
     codes[color] if codes.key?(color)
   end
 
-  def piece_choice_valid(choice, other_piece)
-    if choice == other_piece
-      puts "You can't use #{other_piece}... try again..."
-      false
-    else
-      true
-    end
+  def piece_valid?(choice, other_piece)
+    choice != other_piece
   end
 end
